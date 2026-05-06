@@ -100,6 +100,13 @@ class HealthAnalyzer {
         severity: AlertSeverity.danger,
       ));
     }
+    if (smoothedBpm > 100 && zone == HrZone.rest) {
+  alerts.add(const HealthAlert(
+    title: 'Posible taquicardia estando en reposo',
+    message: 'Frecuencia mayor a 100 BPM en zona de reposo se recomienda seguimiento médico.',
+    severity: AlertSeverity.warning,
+  ));
+}
 
     if (zone == HrZone.max) {
       alerts.add(const HealthAlert(
