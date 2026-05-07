@@ -67,6 +67,10 @@ class DashboardScreen extends StatelessWidget {
                   zone: zone,
                   rmssdMs: stream.rmssdMs),
               const SizedBox(height: 12),
+              _CardiacStatusBanner(bpm:smoothed,rmssdMs:stream.rmssdMs,),
+              
+              const SizedBox(height: 12),
+
               _ZoneTrackCard(currentBpm: smoothed, ranges: ranges, zone: zone),
               const SizedBox(height: 16),
               Expanded(
@@ -324,6 +328,76 @@ class _ModeSelector extends StatelessWidget {
         return 'Ejercicio';
       default:
         return mode;
+        }
     }
+    }
+    class _CardiacStatusBanner extends StatelessWidget {
+      final double bpm;
+      final double? rmssdMs;
+
+  const _CardiacStatusBanner({
+    required this.bpm,
+    required this.rmssdMs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Color color;
+    String title;
+    IconData icon;
+
+    if (bpm > 120 || (rmssdMs != null && rmssdMs! > 120)) {
+      color = Colors.red;
+      title = 'RIESGO CARDIOVASCULAR';
+      icon = Icons.warning_rounded;
+    } else if (bpm > 100) {
+      color = Colors.orange;
+      title = 'PRECAUCIÓN';
+      icon = Icons.monitor_heart_rounded;
+    } else {
+      color = Colors.green;
+      title = 'NORMAL';
+      icon = Icons.favorite_rounded;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color, width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'BPM: ${bpm.toStringAsFixed(0)}'
+                  '${rmssdMs != null ? '  •  HRV: ${rmssdMs!.toStringAsFixed(0)} ms' : ''}',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
