@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 
 import '../data/models/beat.dart';
 import '../data/models/ecg_sample.dart';
-import '../data/services/ecg_socket_service.dart';
+import '../data/services/ecg_signal_service.dart';
+import '../logic/r_peak_detector.dart';
 
 /// Holds a fixed-length ring buffer of recent ECG samples plus the latest
 /// beats. Notifies listeners on every incoming sample so charts can repaint
@@ -15,18 +16,24 @@ import '../data/services/ecg_socket_service.dart';
 /// span typically shown in clinical strips.
 class EcgStreamProvider extends ChangeNotifier {
   EcgStreamProvider(
-    this._socket, {
+    this._signal, {
     this.windowSize = 1500,
     this.beatHistory = 60,
     this.notifyEverySamples = 4,
   }) {
-    _sampleSub = _socket.samples.listen(_onSample);
-    _beatSub = _socket.beats.listen(_onBeat);
+    _sampleSub = _signal.samples.listen(_onSample);
+    _statusSub = _signal.statusStream.listen((status) {
+      if (status == SignalConnectionStatus.disconnected ||
+          status == SignalConnectionStatus.failed) {
+        clear();
+      }
+    });
   }
 
-  final EcgSocketService _socket;
+  final EcgSignalService _signal;
   final int windowSize;
   final int beatHistory;
+  final _detector = RPeakDetector();
 
   /// At 250 Hz, notifying on every sample would force ~250 rebuilds/sec.
   /// Notifying every 4th sample yields ~62 Hz UI updates — visually smooth
@@ -35,7 +42,7 @@ class EcgStreamProvider extends ChangeNotifier {
   int _sinceNotify = 0;
 
   late final StreamSubscription<EcgSample> _sampleSub;
-  late final StreamSubscription<Beat> _beatSub;
+  late final StreamSubscription<SignalConnectionStatus> _statusSub;
 
   final Queue<EcgSample> _samples = Queue<EcgSample>();
   final Queue<Beat> _beats = Queue<Beat>();
@@ -77,6 +84,12 @@ class EcgStreamProvider extends ChangeNotifier {
     while (_samples.length > windowSize) {
       _samples.removeFirst();
     }
+
+    final beat = _detector.add(s);
+    if (beat != null) {
+      _onBeat(beat);
+    }
+
     _sinceNotify++;
     if (_sinceNotify >= notifyEverySamples) {
       _sinceNotify = 0;
@@ -97,6 +110,8 @@ class EcgStreamProvider extends ChangeNotifier {
     _samples.clear();
     _beats.clear();
     _lastBeat = null;
+    _sinceNotify = 0;
+    _detector.reset();
     notifyListeners();
   }
 
@@ -112,7 +127,7 @@ class EcgStreamProvider extends ChangeNotifier {
   @override
   void dispose() {
     _sampleSub.cancel();
-    _beatSub.cancel();
+    _statusSub.cancel();
     super.dispose();
   }
 }

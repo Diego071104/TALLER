@@ -83,12 +83,17 @@ class DashboardScreen extends StatelessWidget {
                 samplesInBuffer: stream.sampleCount,
                 sampleRate: connection.sampleRate,
               ),
-              const SizedBox(height: 12),
-              _ModeSelector(
-                modes: connection.availableModes,
-                current: connection.mode,
-                onSelect: (m) => connection.changeMode(m),
-              ),
+              if (connection.deviceLabel != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Fuente: ${connection.deviceLabel}',
+                  style: AppTheme.monoNumeric(
+                    size: 12,
+                    weight: FontWeight.w500,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -273,67 +278,9 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-class _ModeSelector extends StatelessWidget {
-  final List<String> modes;
-  final String? current;
-  final void Function(String) onSelect;
-
-  const _ModeSelector(
-      {required this.modes, required this.current, required this.onSelect});
-
-  @override
-  Widget build(BuildContext context) {
-    if (modes.isEmpty) return const SizedBox.shrink();
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: modes.map((m) {
-          final selected = m == current;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(_label(m)),
-              selected: selected,
-              onSelected: (_) => onSelect(m),
-              selectedColor: AppColors.accentCyan.withValues(alpha: 0.18),
-              backgroundColor: AppColors.surface,
-              labelStyle: TextStyle(
-                color: selected ? AppColors.accentCyan : AppColors.textSecondary,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(999),
-                side: BorderSide(
-                  color: selected ? AppColors.accentCyan : AppColors.divider,
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  String _label(String mode) {
-    switch (mode) {
-      case 'normal':
-        return 'Normal';
-      case 'tachycardia':
-        return 'Taquicardia';
-      case 'bradycardia':
-        return 'Bradicardia';
-      case 'arrhythmia':
-        return 'Arritmia';
-      case 'exercise':
-        return 'Ejercicio';
-      default:
-        return mode;
-        }
-    }
-    }
-    class _CardiacStatusBanner extends StatelessWidget {
-      final double bpm;
-      final double? rmssdMs;
+class _CardiacStatusBanner extends StatelessWidget {
+  final double bpm;
+  final double? rmssdMs;
 
   const _CardiacStatusBanner({
     required this.bpm,
