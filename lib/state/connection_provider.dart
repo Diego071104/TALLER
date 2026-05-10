@@ -2,69 +2,49 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../data/services/ecg_socket_service.dart';
+import '../data/services/ecg_signal_service.dart';
 
-/// Owns the WebSocket connection lifecycle and exposes the latest
-/// HelloMessage (sample rate, mode, available modes) to the UI.
 class ConnectionProvider extends ChangeNotifier {
-  ConnectionProvider(this._socket) {
-    _statusSub = _socket.statusStream.listen((s) {
+  ConnectionProvider(this._signal) {
+    _status = _signal.status;
+    _deviceLabel = _signal.deviceLabel;
+    _statusSub = _signal.statusStream.listen((s) {
       _status = s;
-      notifyListeners();
-    });
-    _helloSub = _socket.hello.listen((h) {
-      _sampleRate = h.sampleRate;
-      _mode = h.mode;
-      _availableModes = h.availableModes;
+      _deviceLabel = _signal.deviceLabel;
       notifyListeners();
     });
   }
 
-  final EcgSocketService _socket;
-  late final StreamSubscription<SocketStatus> _statusSub;
-  late final StreamSubscription<HelloMessage> _helloSub;
+  final EcgSignalService _signal;
+  late final StreamSubscription<SignalConnectionStatus> _statusSub;
 
-  String _serverUrl = 'ws://localhost:8765';
-  SocketStatus _status = SocketStatus.disconnected;
-  int? _sampleRate;
-  String? _mode;
-  List<String> _availableModes = const [];
+  SignalConnectionStatus _status = SignalConnectionStatus.disconnected;
+  String? _deviceLabel;
 
-  String get serverUrl => _serverUrl;
-  SocketStatus get status => _status;
-  int? get sampleRate => _sampleRate;
-  String? get mode => _mode;
-  List<String> get availableModes => _availableModes;
-  String? get lastError => _socket.lastError;
-  EcgSocketService get socket => _socket;
-
-  void setServerUrl(String url) {
-    _serverUrl = url;
-    notifyListeners();
-  }
+  SignalConnectionStatus get status => _status;
+  int get sampleRate => _signal.sampleRate;
+  bool get isSupported => _signal.isSupported;
+  String? get deviceLabel => _deviceLabel;
+  String? get lastError => _signal.lastError;
+  EcgSignalService get signal => _signal;
 
   Future<void> connect() async {
     try {
-      await _socket.connect(_serverUrl);
+      await _signal.connect();
+      _deviceLabel = _signal.deviceLabel;
+      notifyListeners();
     } catch (_) {
-      // status stream already published failed; UI reads lastError.
+      // UI reads the published status and lastError.
     }
   }
 
   Future<void> disconnect() async {
-    await _socket.disconnect();
-  }
-
-  void changeMode(String mode) {
-    _socket.setMode(mode);
-    _mode = mode;
-    notifyListeners();
+    await _signal.disconnect();
   }
 
   @override
   void dispose() {
     _statusSub.cancel();
-    _helloSub.cancel();
     super.dispose();
   }
 }

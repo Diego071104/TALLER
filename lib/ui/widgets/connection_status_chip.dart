@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/colors.dart';
-import '../../data/services/ecg_socket_service.dart';
+import '../../data/services/ecg_signal_service.dart';
 
 class ConnectionStatusChip extends StatelessWidget {
-  final SocketStatus status;
+  final SignalConnectionStatus status;
+
   const ConnectionStatusChip({super.key, required this.status});
 
   @override
@@ -24,23 +25,29 @@ class ConnectionStatusChip extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: color,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
     );
   }
 
-  (Color, String, IconData) _describe(SocketStatus s) {
+  (Color, String, IconData) _describe(SignalConnectionStatus s) {
     switch (s) {
-      case SocketStatus.disconnected:
+      case SignalConnectionStatus.unsupported:
+        return (AppColors.textMuted, 'Sin soporte', Icons.block_rounded);
+      case SignalConnectionStatus.disconnected:
         return (AppColors.textMuted, 'Desconectado', Icons.cloud_off_rounded);
-      case SocketStatus.connecting:
+      case SignalConnectionStatus.connecting:
         return (AppColors.accentAmber, 'Conectando...', Icons.sync_rounded);
-      case SocketStatus.connected:
+      case SignalConnectionStatus.connected:
         return (AppColors.accentGreen, 'Conectado', Icons.check_circle_rounded);
-      case SocketStatus.failed:
-        return (AppColors.accentRed, 'Falló conexión', Icons.error_rounded);
+      case SignalConnectionStatus.failed:
+        return (AppColors.accentRed, 'Fallo conexion', Icons.error_rounded);
     }
   }
 }

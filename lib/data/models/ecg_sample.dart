@@ -1,13 +1,18 @@
-/// One ECG voltage sample at a moment in time. Streamed at sample_rate Hz
-/// (typically 250) over the simulator WebSocket.
+/// One ECG sample at a moment in time.
 class EcgSample {
   final double timestamp;
   final double mv;
+  final int? rawAdc;
 
-  const EcgSample({required this.timestamp, required this.mv});
+  const EcgSample({
+    required this.timestamp,
+    required this.mv,
+    this.rawAdc,
+  });
 
   factory EcgSample.fromJson(Map<String, dynamic> json) => EcgSample(
         timestamp: (json['ts'] as num).toDouble(),
         mv: (json['mv'] as num).toDouble(),
+        rawAdc: (json['adc'] as num?)?.toInt(),
       );
 }
