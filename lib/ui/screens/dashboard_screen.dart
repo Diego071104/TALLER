@@ -35,6 +35,7 @@ class DashboardScreen extends StatelessWidget {
     const analyzer = HealthAnalyzer();
     final ranges = analyzer.zonesFor(profile);
     final smoothed = stream.smoothedBpm ?? 0;
+    final signalQuality = _getSignalQuality(smoothed,stream.rmssdMs,);
     final zone = analyzer.classify(smoothed, ranges);
 
     return Scaffold(
@@ -66,8 +67,9 @@ class DashboardScreen extends StatelessWidget {
                   bpm: stream.smoothedBpm,
                   zone: zone,
                   rmssdMs: stream.rmssdMs),
-              const SizedBox(height: 12),
-              _CardiacStatusBanner(bpm:smoothed,rmssdMs:stream.rmssdMs,),
+              const SizedBox(height: 8),
+              _SignalQualityChip(signalQuality:signalQuality),
+              const SizedBox(height: 12),_CardiacStatusBanner(bpm: smoothed,rmssdMs: stream.rmssdMs,),
               
               const SizedBox(height: 12),
 
@@ -329,8 +331,9 @@ class _ModeSelector extends StatelessWidget {
       default:
         return mode;
         }
+      }
     }
-    }
+    
     class _CardiacStatusBanner extends StatelessWidget {
       final double bpm;
       final double? rmssdMs;
@@ -394,6 +397,63 @@ class _ModeSelector extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+String _getSignalQuality(double bpm, double? rmssdMs) {
+  if (bpm == 0) return 'Sin señal';
+  if (rmssdMs != null && rmssdMs > 120) {
+    return 'Mala conexión / ritmo irregular';
+  }
+  if (rmssdMs != null && rmssdMs > 80) {
+    return 'Ruido moderado';
+  }
+  return 'Señal estable';
+}
+
+class _SignalQualityChip extends StatelessWidget {
+  final String signalQuality;
+
+  const _SignalQualityChip({required this.signalQuality});
+
+  @override
+  Widget build(BuildContext context) {
+    Color color;
+    IconData icon;
+
+    if (signalQuality == 'Señal estable') {
+      color = AppColors.success;
+      icon = Icons.check_circle_rounded;
+    } else if (signalQuality == 'Ruido moderado') {
+      color = AppColors.warning;
+      icon = Icons.warning_amber_rounded;
+    } else {
+      color = AppColors.danger;
+      icon = Icons.error_rounded;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.7)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            'Calidad de señal: $signalQuality',
+            style: TextStyle(
+              color: color,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
